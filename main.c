@@ -47,22 +47,18 @@ int main(int argc, char **argv)
 				puts("Tasks:");
 				putfile(FILENAME);
 
-				fclose(tasks);
 				break;
 			case 'n':
 				fputs("New task: ", stdout);
 				fgets(newtask, TASKLEN, stdin);				
 				fputs(newtask, tasks);
 				
-				fclose(tasks);
 				break;
 			case 'c':
 				fputs("COMPLETED TASK ID: ", stdout);
 				scanf("%zd", &id);
 			
 				complete(FILENAME, id);
-
-				fclose(tasks);	
 				break;
 			case 'e':
 				fputs("Line editing: ", stdout);
@@ -71,39 +67,29 @@ int main(int argc, char **argv)
 				fputs("Print new task version: ", stdout);
 				scanf("%s", newtask);	
 
+				strcat(newtask, "\n");
 				edit(FILENAME, newtask, l1);
-				
-				fclose(tasks);
 				break;
 			case 'r':
 				fputs("Tasks id's: ", stdout);
 				scanf("%zd %zd", &l1, &l2);
 
 				move(FILENAME, l1, l2);
-
-				fclose(tasks);
 				break;
 			case 'h':
-				#define imenu "-i: read all tasks"
-				#define nmenu	"-n: make new task"
-				#define cmenu "-c: commit task as commit"
-				#define rmenu "-r: replace task 1 and task2"
-				#define emenu "-e: edit task info by id"
-				#define hmenu "-h: help menu"
+				puts("-i: read all tasks");						/* imenu */
+				puts("-n: make new task");						/* nmenu */
+				puts("-c: commit task as commit");		/* cmenu */
+				puts("-r: replace task 1 and task2");	/* rmenu */
+				puts("-e: edit task info by id");			/* emenu */
+				puts("-h: help menu");								/* hmenu */
 
-				puts(imenu);
-				puts(nmenu);
-				puts(cmenu);
-				puts(rmenu);
-				puts(emenu);
-				puts(hmenu);
-
-				fclose(tasks);
 				break;
 			case '?':
 				break;
 		}
 
+		fclose(tasks);
 		putchar('\n');
 	}
 
@@ -139,51 +125,54 @@ int complete(const char *filename, int id)
 }
 
 
-int edit(const char *filename, const char *newinfo, size_t l1)
+int edit(const char *filename, const char *new, size_t cl)
 {
-	FILE *read, *write;
+	FILE *r, *w;
 	char *buf;
 	size_t i;
 
-	if ((read = fopen(filename, "r"))  && (write = fopen(".temp.txt", "w"))) {
-		for (buf = malloc(BUFLEN), i = 0; fgets(buf, BUFLEN, read); i++) {
-			if (i != l1-1)	fputs(buf, write);
-			else						fputs(newinfo, write);
-		}
+	if ( !(r = fopen(filename, "r")) )
+		{printf("Have no \"%s\"", filename); return 0;}
+	w = fopen(".temp.txt", "w");
 
-		remove(filename);
-		rename(".temp.txt", filename);
-
-		free(buf);
-		fclose(read);
-		fclose(write);
-		return 1;
+	for (buf = malloc(BUFLEN), i = 1; fgets(buf, BUFLEN, r); i++) {
+		if (i == cl) fputs(new, w);
+		else				 fputs(buf, w);
 	}
+	free(buf);
+	fclose(r);
+	fclose(w);
+	
+	remove(filename);
+	rename(".temp.txt", filename);
 
-	printf("Undefinded system file %s", filename);
-	return 0;	
+	return 1;
 }
 
 
 int move(const char *filename, size_t l1, size_t l2) 
 {
-	FILE *read;
+	FILE *r;
 	char *b1, *b2;
 	size_t i;
 
-	openfile(read, filename, "r");
+	if (l1 == l2)
+		return 1;
+
+	if (!fopen(filename, "r"))
+		{printf("Have no \"%s\"", filename); return 0;}
 
 	b1 = malloc(TASKLEN);
  	b2 = malloc(TASKLEN);
 
 	/* GETTING b1 AND b2 */
-	if (l1 < l2) {
-		for (i = 0; fgets(b1, TASKLEN, read) && i != l1-1; ++i);
-		for (i = 0; fgets(b2, TASKLEN, read) && i != l2-1; ++i);
-	} else if (l1 > l2) {
-		for (i = 0; fgets(b2, TASKLEN, read) && i != l2-1; ++i);	
-		for (i = 0; fgets(b1, TASKLEN, read) && i != l1-1; ++i);
-	} else return 1;
+	r = fopen(filename, "r");
+	for (i = 1; i <= l1 && fgets(b1, BUFLEN, r); i++);
+	fclose(r);
+
+	r = fopen(filename, "r");
+	for (i = 0; i <= l2 && fgets(b2, BUFLEN, r); i++);
+	fclose(r);
 
 	/* MOVE */
 	edit(filename, b2, l1);
@@ -191,7 +180,7 @@ int move(const char *filename, size_t l1, size_t l2)
 
 	free(b1);
 	free(b2);
-	fclose(read);
+
 	return 1;
 }
 
