@@ -1,75 +1,63 @@
-#include <stdio.h>
 #include <getopt.h>
 #include <stdlib.h>
-#include <string.h>
+
+#include "operators.h"
 
 #define FILENAME "/home/max/.tasks.txt"
-#define TASKSLEN 100
-#define TASKLEN  100
-
-extern int edit(const char *, const char *, size_t);
-extern int replace(const char *, size_t, size_t);
-extern int print(const char *);
-extern int complete(const char *, int);
-extern int help(void);
+#define FLAGS		 "P:pN:n:Cc:r:E:e:h""
+#define FAIL		 -1
 
 int main(int argc, char **argv)
 {
 	FILE *tasks;
-	char *newtask;
 	char mode;
-	size_t id, l1, l2;
 
 	/* MAIN */
-	newtask = malloc(TASKLEN);
-	for (;(mode = getopt(argc, argv, "pncreh")) != -1;) {
+	for (;(mode = getopt(argc, argv, FLAGS))!=FAIL;) {
 		tasks = fopen(FILENAME, "a");
 		switch (mode) {
+			case 'P':
+				P(FILENAME, (size_t)atoi(optarg), (size_t)atoi(argv[optind]));
+				break;
 			case 'p':
-				puts("Tasks:");
-				print(FILENAME);
+				p(FILENAME);
+				break;
 
+			case 'N':	
+				N(tasks, atoi(optarg));
 				break;
 			case 'n':
-				fputs("New task: ", stdout);
-				fgets(newtask, TASKLEN, stdin);				
-				fputs(newtask, tasks);
-				
+				fputs(optarg, tasks);
+				fputs("\n", tasks);
+				break;
+			
+			case 'C':
+				C(FILENAME);
 				break;
 			case 'c':
-				fputs("COMPLETED TASK ID: ", stdout);
-				scanf("%zd", &id);
+				complete(FILENAME, atoi(optarg));
+				break;
 			
-				complete(FILENAME, id);
+			case 'E':
+				E(FILENAME, atoi(optarg));
 				break;
 			case 'e':
-				fputs("Line editing: ", stdout);
-				scanf("%zd", &l1);
-
-				fputs("Print new task version: ", stdout);
-				scanf("%s", newtask);	
-
-				strcat(newtask, "\n");
-				edit(FILENAME, newtask, l1);
+				e(atoi(optarg), FILENAME);
 				break;
+			
 			case 'r':
-				fputs("Tasks id's: ", stdout);
-				scanf("%zd %zd", &l1, &l2);
-
-				replace(FILENAME, l1, l2);
+				replace(FILENAME, atoi(optarg), atoi(argv[optind]));
 				break;
+			/* case 'R' */
+
 			case 'h':
-				help();
+				h();
 				break;
 			case '?':
 				break;
 		}
-
 		fclose(tasks);
-		putchar('\n');
 	}
 
-	free(newtask);
 	return 0;	
 }
-
