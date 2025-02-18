@@ -2,9 +2,11 @@
 #include <stdlib.h>
 
 #include "operators.h"
+#include "../mylibs/conf/conf.h"
 
+#define CONFDIR  "/home/max/.config/.tasks.conf"
 #define FILENAME "/home/max/.tasks.txt"
-#define FLAGS		 "P:pN:n:Cc:r:E:e:h""
+#define FLAGS		 "P:pN:n:Cc:R:r:E:e:h"
 #define FAIL		 -1
 
 int main(int argc, char **argv)
@@ -48,7 +50,9 @@ int main(int argc, char **argv)
 			case 'r':
 				replace(FILENAME, atoi(optarg), atoi(argv[optind]));
 				break;
-			/* case 'R' */
+			case 'R':
+				R(FILENAME, atoi(optarg));
+				break;
 
 			case 'h':
 				h();

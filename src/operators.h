@@ -45,6 +45,7 @@ extern int help(void);
 	puts("-N: make +n new tasks");						/* Nmenu */	\
 	puts("-C: complite all tasks");						/* Cmenu */	\
 	puts("-E: edit n tasks");									/* Emenu */ \
+	puts("-R: n-times use r");								/* Rmenu */	\
 
 /* Super */
 #define P(fn, l1, l2) {																	\
@@ -95,3 +96,12 @@ extern int help(void);
 	}																	\
 	free(newt);												\
 }
+
+#define R(fn, times) {									\
+	size_t l1, l2, i;											\
+	for (i = 1; i <= times; i++) {				\
+		scanf("%zu %zu", &l1, &l2);					\
+		replace(fn, l1, l2);								\
+	}																			\
+}																				\
+
