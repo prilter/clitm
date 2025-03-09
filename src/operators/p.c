@@ -17,9 +17,8 @@ print(const char *filename)
 	size_t i;
 
 	/* OPEN FILE */
-	if (!fopen(filename, "r"))
-		fclose(fopen(filename, "w"));
-	file = fopen(filename, "r");
+	if (!(file = fopen(filename, "r")))
+		{printf("Make the %s list", filename); return 0;}
 
 	/* MAIN */
 	for (i = 1; fgets(buf, BUFLEN, file);)

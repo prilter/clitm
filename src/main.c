@@ -1,57 +1,78 @@
 #include <getopt.h>
 #include <stdlib.h>
 
+#include "../mylibs/paths/paths.h"
 #include "operators.h"
 #include "../mylibs/conf/conf.h"
 
 #define CONFDIR  "/home/max/.config/.tasks.conf"
-#define FILENAME "/home/max/.tasks.txt"
-#define FLAGS		 "P:pN:n:Cc:R:r:E:e:h"
+#define FLAGS		 "P:pN:n:Cc:R:r:E:e:lb:m:k:a:h"
 #define FAIL		 -1
 
 int main(int argc, char **argv)
 {
-	FILE *tasks;
+	char *taskspath;
 	char mode;
+
+	/* GET A TASKS LIST PATH */
+	taskspath = malloc(TASKSLEN);
+	gettaskspath(taskspath);
 
 	/* MAIN */
 	for (;(mode = getopt(argc, argv, FLAGS))!=FAIL;) {
-		tasks = fopen(FILENAME, "a");
 		switch (mode) {
 			case 'P':
-				P(FILENAME, (size_t)atoi(optarg), (size_t)atoi(argv[optind]));
+				P(taskspath, (size_t)atoi(optarg), (size_t)atoi(argv[optind]));
 				break;
 			case 'p':
-				p(FILENAME);
+				p(taskspath);
 				break;
 
 			case 'N':	
-				N(tasks, atoi(optarg));
+				N(taskspath, atoi(optarg));
 				break;
 			case 'n':
-				fputs(optarg, tasks);
-				fputs("\n", tasks);
+				fprintf(fopen(taskspath, "a"), "%s\n", optarg);
 				break;
 			
 			case 'C':
-				C(FILENAME);
+				C(taskspath);
 				break;
 			case 'c':
-				complete(FILENAME, atoi(optarg));
+				complete(taskspath, atoi(optarg));
 				break;
 			
 			case 'E':
-				E(FILENAME, atoi(optarg));
+				E(taskspath, atoi(optarg));
 				break;
 			case 'e':
-				e(atoi(optarg), FILENAME);
+				e(atoi(optarg), taskspath);
 				break;
 			
 			case 'r':
-				replace(FILENAME, atoi(optarg), atoi(argv[optind]));
+				replace(taskspath, atoi(optarg), atoi(argv[optind]));
 				break;
 			case 'R':
-				R(FILENAME, atoi(optarg));
+				R(taskspath, atoi(optarg));
+				break;
+
+			case 'l': 
+				l();
+				break;
+			case 'b':
+				b(optarg);
+				break;
+			case 'm':
+				m(optarg);
+				break;
+			case 'k':
+				k(optarg);
+				break;
+			case 'a':
+				if (*argv[optind] != '.')
+					{a(taskspath, argv[optind-1], argv[optind]);}
+				else
+					{puts("You can't use a dot in this context");}
 				break;
 
 			case 'h':
@@ -60,8 +81,10 @@ int main(int argc, char **argv)
 			case '?':
 				break;
 		}
-		fclose(tasks);
 	}
 
+	free(taskspath);
 	return 0;	
 }
+
+
