@@ -17,7 +17,7 @@ complete(const char *filename, int id)
 
 	/* CHECK FILE */
 	if (!fopen(filename, "r"))
-		fclose(fopen(filename, "w"));
+		{puts("The task list doesn't exist"); return 0;}
 
 	/* OPEN FILE DECORATORS */
 	file = fopen(filename, "r");

@@ -6,7 +6,7 @@
 #include "../mylibs/conf/conf.h"
 
 #define CONFDIR  "/home/max/.config/.tasks.conf"
-#define FLAGS		 "P:pN:n:Cc:R:r:E:e:lb:m:k:a:h"
+#define FLAGS		 "P:pN:n:Cc:R:r:E:e:lb:M:m:K:k:a:uqh"
 #define FAIL		 -1
 
 int main(int argc, char **argv)
@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 				N(taskspath, atoi(optarg));
 				break;
 			case 'n':
-				fprintf(fopen(taskspath, "a"), "%s\n", optarg);
+				if (fopen(taskspath, "r")) fprintf(fopen(taskspath, "a"), "%s\n", optarg);
 				break;
 			
 			case 'C':
@@ -62,17 +62,33 @@ int main(int argc, char **argv)
 			case 'b':
 				b(optarg);
 				break;
+
+			case 'M':
+				M(optarg);
+				break;
 			case 'm':
 				m(optarg);
+				break;
+
+			case 'K':
+				K(taskspath, optarg);
 				break;
 			case 'k':
 				k(optarg);
 				break;
+
 			case 'a':
 				if (*argv[optind] != '.')
 					{a(taskspath, argv[optind-1], argv[optind]);}
 				else
 					{puts("You can't use a dot in this context");}
+				break;
+			case 'u':
+				u();
+				break;
+
+			case 'q':
+				q();
 				break;
 
 			case 'h':

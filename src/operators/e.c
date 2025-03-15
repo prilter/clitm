@@ -16,7 +16,7 @@ edit(const char *filename, const char *new, size_t cl)
 	size_t i;
 
 	if ( !(r = fopen(filename, "r")) )
-		{printf("Have no \"%s\"", filename); return 0;}
+		{puts("Usable task list doesn't exist"); return 0;}
 	w = fopen(".temp.txt", "w");
 
 	for (buf = malloc(BUFLEN), i = 1; fgets(buf, BUFLEN, r); i++) {

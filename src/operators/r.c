@@ -28,7 +28,7 @@ replace(const char *filename, size_t l1, size_t l2)
 		return 1;
 
 	if (!fopen(filename, "r"))
-		{printf("Have no \"%s\"", filename); return 0;}
+		{puts("Choose the usable task list"); return 0;}
 
 	/* GETTING b1 AND b2 */
 	getb(l1, r, b1);
