@@ -2,11 +2,11 @@
 #include <stdlib.h>
 
 #include "../mylibs/paths/paths.h"
-#include "operators.h"
+#include "operators.h" 
 #include "../mylibs/conf/conf.h"
 
 #define CONFDIR  "/home/max/.config/.tasks.conf"
-#define FLAGS		 "P:pN:n:Cc:R:r:E:e:lb:M:m:K:k:a:uqh"
+#define FLAGS		 "P:pS:s:N:n:Cc:R:r:Ee:lb:M:m:K:k:a:uqh"
 #define FAIL		 -1
 
 int main(int argc, char **argv)
@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 	char *taskspath;
 	char mode;
 
-	/* GET A TASKS LIST PATH */
+	/* GET A TASKS LIST PATH AND TASK LIST */
 	taskspath = malloc(TASKSLEN);
 	gettaskspath(taskspath);
 
@@ -22,11 +22,25 @@ int main(int argc, char **argv)
 	for (;(mode = getopt(argc, argv, FLAGS))!=FAIL;) {
 		switch (mode) {
 			case 'P':
-				P(taskspath, (size_t)atoi(optarg), (size_t)atoi(argv[optind]));
+				if (argv[optind])
+					{P(taskspath, (size_t)atoi(optarg), (size_t)atoi(argv[optind]));}
+				else
+				  {P(taskspath, (size_t)atoi(optarg), (size_t)TASKSLEN);}
 				break;
 			case 'p':
 				p(taskspath);
 				break;
+
+			case 's':
+				s(optarg);
+				break;
+			case 'S':
+				if (argv[optind+1])
+					{S(optarg, (size_t)atoi(argv[optind]), (size_t)atoi(argv[optind+1]));}
+				else 
+				  {S(optarg, (size_t)atoi(argv[optind]), (size_t)TASKSLEN);}
+				break;
+
 
 			case 'N':	
 				N(taskspath, atoi(optarg));
@@ -43,7 +57,7 @@ int main(int argc, char **argv)
 				break;
 			
 			case 'E':
-				E(taskspath, atoi(optarg));
+				E(taskspath);
 				break;
 			case 'e':
 				e(atoi(optarg), taskspath);
@@ -99,7 +113,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	free(taskspath);
+	free(taskspath); 
 	return 0;	
 }
 

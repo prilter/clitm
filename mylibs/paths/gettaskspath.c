@@ -18,7 +18,7 @@ char *_gettaskspath(char *taskspath)
 	/* GET USABLE & HOME DIR */
 	usable_file = _gethomepath(usable_file);
 	homedir     = _gethomepath(homedir);
-	strcat(usable_file, "/.tasks/usable");
+	strcat(usable_file, "/.tasks/.usable");
 
 	/* GET A TASKS LIST PATH */
 	fgets(buf, TASKSLEN, fopen(usable_file, "r"));
