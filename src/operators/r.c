@@ -10,7 +10,6 @@
 extern int edit(const char *fm, const char *new, size_t line);
 
 #define BUFLEN	 1024
-#define TASKLEN  100
 
 #define getb(l, r, b) {																	\
 	r = fopen(filename, "r");															\
@@ -22,7 +21,7 @@ int
 replace(const char *filename, size_t l1, size_t l2) 
 {
 	FILE *r;
-	char b1[TASKLEN], b2[TASKLEN];
+	char b1[BUFLEN], b2[BUFLEN];
 
 	if (l1 == l2)
 		return 1;

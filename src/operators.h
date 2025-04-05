@@ -1,38 +1,67 @@
+/* EVERY FLAG OPERATIONS */
+
+/* LIBS */
 #include <stdio.h>
 #include <string.h>
 
-extern int edit(const char *, const char *, size_t);
-extern int replace(const char *, size_t, size_t);
-extern int print(const char *);
-extern int complete(const char *, int);
-extern int help(void);
+/* CONFIG */
+#include "../config.h"
 
-#define TASKSLEN 100
-#define TASKLEN  100
+/* EXTERN */
+extern int edit(const char *, const char *, size_t); /* FROM e.c */
+extern int replace(const char *, size_t, size_t);    /* FROM r.c */
+extern int print(const char *);                      /* FROM p.c */
+extern int complete(const char *, int);              /* FROM c.c */
+
+/* MACROSES */
 #define DIRLEN   100
 #define BUFLEN   1024
 #define RESLEN   1024
 #define COMLEN	 1024
-#define NOTASKS	 "No tasks"
-#define NONPATH  "Nothing			"
+#define NONPATH  "Nothing\t   "
+
+#ifndef TASKSLEN
+	#define TASKSLEN 100
+#endif
+
+#ifndef TASKLEN
+	#define TASKLEN  100
+#endif
+
+#ifndef NAMELEN
+	#define NAMELEN  100
+#endif
+
+#ifndef NOTASKS	
+	#define NOTASKS	 "No tasks"
+#endif
+
+#ifndef EDITOR
+	#define EDITOR "nano"
+#endif
+
 
 #define make(fn) fclose(fopen(fn, "w"))
 
-/* DEFAULT */
+/* DEFAULT FLAGS */
+/* PRINT ALL TASKS FROM CURRENT TASK LIST */
 #define p(fn)	{															   \
+	FILE *r;                                     \
 	char *buf;      													   \
 																						   \
 	buf = malloc(BUFLEN);                        \
-	if ((fopen(fn, "r"))) {                      \
-		if (!(fgets(buf, BUFLEN, fopen(fn, "r")))) \
+	if ((r = fopen(fn, "r"))) {                  \
+		if (!(fgets(buf, BUFLEN, r)))              \
 			puts(NOTASKS);													 \
 		else																			 \
 			{puts("Tasks:");print(fn);}							 \
+		fclose(r);                                 \
 	} else puts("Choose the usable task list");  \
 	free(buf);                                   \
 }
 
 
+/* PRINT ALL TASKS FROM CHOOSED TASK LIST */
 #define s(fn) {                               \
 	char *ldir, *buf;                           \
                                               \
@@ -54,6 +83,7 @@ extern int help(void);
 }
 
 
+/* EDIT 1 LINE IN CURRENT TASK LIST */
 #define e(l, filename) {												  \
 	char *b;																			  \
 	if (fopen(filename, "r")) {                     \
@@ -63,7 +93,9 @@ extern int help(void);
 	} else puts("Choose the usable task list");     \
 }
 
-#include <dirent.h>
+
+/* SEE ALL TASK LISTS */
+#include <dirent.h> /* TO WORK WITH DIRECTORIES INFORMATION */
 #define l() {                                   \
 	/* VARIABLES */                               \
 	DIR  *dir;                                    \
@@ -88,6 +120,7 @@ extern int help(void);
 }
 
 
+/* MAKE A TASK LIST */
 #define b(list) {               \
 	char *listdir;                \
 	if (*list != '.') {           \
@@ -103,7 +136,8 @@ extern int help(void);
 }
 
 
-#include <unistd.h>
+/* MOVE TO OTHER TASK LIST */
+#include <unistd.h> /* TO CHECK EXTISTING OF FILE IN DIRECTORY */
 #define m(list) {\
 	FILE *w;                              \
 	char *listdir, *usabledir;            \
@@ -130,6 +164,7 @@ extern int help(void);
 }
 
 
+/* KILL TASK LIST */
 #define k(list) {                                    \
 	FILE *read;                                        \
 	char *listdir, *usinglist, *usabledir;             \
@@ -161,6 +196,7 @@ extern int help(void);
 }
 
 
+/* ALIAS TASK LIST */
 #define a(tdir, oldn, newn) { \
 	char *oldpath, *newpath;    \
                               \
@@ -184,6 +220,7 @@ extern int help(void);
 }
 
 
+/* CHECK USABLE TASK LIST */
 #define u()	{                             \
 	FILE *read;                             \
 	char *usable_path, *res;                \
@@ -203,6 +240,7 @@ extern int help(void);
 }
 
 
+/* QUIT FROM TASK LIST */
 #define q() {                           \
 	FILE *edit;                           \
 	char *usablefile;                     \
@@ -219,6 +257,7 @@ extern int help(void);
 }
 
 
+/* HELP MENU */
 #define h()																							       \
 	puts("Normal:");                                             \
 	puts("-p: print all tasks");                     /* pmenu */ \
@@ -247,6 +286,7 @@ extern int help(void);
 	puts("-K: like -k, can delete usable task list");/* Kmenu */
 
 /* Super */
+/* PRINT SOME TASKS FROM CURRENT TASK LIST */
 #define P(fn, l1, l2) {																	                              \
 	FILE *read;                                                                         \
 	char c[COMLEN];																				                              \
@@ -267,6 +307,8 @@ extern int help(void);
 	} else puts("Choose task list");                        \
 }
 
+
+/* PRINT SOME TASKS FROM CHOOSED TASK LIST */
 #define S(fn, l1, l2) {                                                                 \
 	FILE *read;                                                                           \
 	char *ldir, *com, *buf;                                                               \
@@ -296,6 +338,8 @@ extern int help(void);
 	free(ldir); free(buf); free(com);                                                     \
 }
 
+
+/* MAKE N-TIMES TASKS IN CURRENT TASK LIST*/
 #define N(filename, len_mac) {			  \
 	FILE *tasks, *read;                 \
 	char b[BUFLEN];									    \
@@ -312,6 +356,8 @@ extern int help(void);
 		puts("Choose a task list");       \
 }
 
+
+/* COMPLETE ALL TASKS FROM CURRENT TASK LIST */
 #define C(filename) {						        \
 	FILE *read;                           \
 				                                \
@@ -323,20 +369,24 @@ extern int help(void);
 		puts("Choose an usable task list"); \
 }
 
-#define E(listdir) {                    \
-	FILE *r;                              \
-	char *com;                            \
-                                        \
-	com = malloc(COMLEN);                 \
-	if ((r = fopen(listdir, "r"))) {      \
-		sprintf(com,"nano \"%s\"",listdir); \
-		system(com);                        \
-		fclose(r);                          \
-	} else puts("Choose a task list");    \
-                                        \
-	free(com);                            \
+
+/* EDIT TASK LIST WITH EDITOR(DEFAULT IS NANO) */
+#define E(listdir) {                         \
+	FILE *r;                                   \
+	char *com;                                 \
+                                             \
+	com = malloc(COMLEN);                      \
+	if ((r = fopen(listdir, "r"))) {           \
+		sprintf(com,"%s \"%s\"",EDITOR,listdir); \
+		system(com);                             \
+		fclose(r);                               \
+	} else puts("Choose a task list");         \
+                                             \
+	free(com);                                 \
 }
 
+
+/* REPLACE SOME TASKS N-TIMES FROM CURRENT TASK LIST */
 #define R(fn, times) {									\
 	size_t l1, l2, i;											\
 	for (i = 1; i <= times; i++) {				\
@@ -345,6 +395,8 @@ extern int help(void);
 	}																			\
 }																				\
 
+
+/* MOVE TO OTHER TASK LIST. IF IT DOESN'T EXIST TASKS WOULD MADE IT */
 #define M(list) {                       \
 	FILE *w;                              \
 	char *listdir, *usabledir;            \
@@ -369,6 +421,8 @@ extern int help(void);
 	free(usabledir);                      \
 }
 
+
+/* KILL TASK LIST WITHOUT A RESTRICTIONS */
 #define K(usepath, tokill) {                         \
 	FILE *usablef, *read;                              \
 	char *listdir, *usinglist, *usabledir;             \

@@ -1,8 +1,17 @@
+/* NEED TO GET USABLE TASK LIST */
+
+/* USABLE LIBS */
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
 
-#define TASKSLEN 1024
+/* CONFIG */
+#include "../../config.h"
+
+/* MACROSES */
+#ifndef NAMELEN
+	#define NAMELEN  1024
+#endif
 #define HOMELEN  1024
 
 extern char * _gethomepath(char *);
@@ -11,7 +20,7 @@ char *_gettaskspath(char *taskspath)
 	char *buf, *usable_file, *homedir;
 	
 	/* MALLOC */
-	buf         = malloc(TASKSLEN);
+	buf         = malloc(NAMELEN);
 	usable_file = malloc(HOMELEN);
 	homedir     = malloc(HOMELEN);
 
@@ -21,7 +30,7 @@ char *_gettaskspath(char *taskspath)
 	strcat(usable_file, "/.tasks/.usable");
 
 	/* GET A TASKS LIST PATH */
-	fgets(buf, TASKSLEN, fopen(usable_file, "r"));
+	fgets(buf, NAMELEN, fopen(usable_file, "r"));
 	sprintf(taskspath, "%s/.tasks/%s", homedir, buf);
 
 	/* END */

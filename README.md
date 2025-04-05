@@ -1,24 +1,32 @@
 # Task-Manager
 It's useful CLI task manager, but only a little bit :)  
-
+  
 # New updates  
-1) Fixed bug with -P when user can't read task list if it has named with spaces  
-2) Changed -E. Since now it has open by nano usable task list  
-3) You can print your tasks from some moment to the end.Like this:tasks -P 3 - print everything after 2 line  
-4) Added -s to print from other task list(like "tasks -s "list2")  
-5) Added -S(like -P, but with difference from -s and -p)  
-6) Fixed a problem to make usable file like a task list  
-7) You can use "Nothing" task list  
-8) Refactored the names of malloc LENS(added BUFLEN, DIRLEN...)
-9) Fixed some memory leak in the working with files descriptors  
+1) Refactoring: added more Makefile commands, removed unusable libs, added more comments to make code more simple  
+2) Have removed useless "paths" lib, use config.h file  
+3) Have added configure file(config.h)  
+4) Have removed install.sh. Now you can use the command "make install"(without sudo, but during the process you will need to use it)  
   
 # Plans  
-1) Add the configure file  
-2) The refactoring   
+1) The refactoring  
+2) Fix bugs that may interfere with using flags in a single command  
   
 # Installation guide  
 ```bash
 git clone https:github.com/prilter/tasks
 cd tasks
-sudo ./install.sh
+make install
+```  
+  
+# Configure  
+1) Clone repository and move to project:  
+```bash
+git clone https:github.com/prilter/tasks
+cd tasks
+```  
+2) Open config.h and configure it  
+3) Setting programm  
+4) Compile:  
+```bash
+make install
 ```

@@ -1,12 +1,12 @@
+/* NEED TO GET HOME PATH */
+
+/* USABLE LIBS */
 #include <stdio.h>
 #include <unistd.h>
-#include <string.h>
-#include <malloc.h>
 
+/* FUNCTION */
 char *_gethomepath(char *b)
 {
-	strcat(b, "/home/");
-	strcat(b, getlogin());
-	
+	sprintf(b, "/home/%s", getlogin());
 	return b;
 }
