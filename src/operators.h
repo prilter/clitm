@@ -3,22 +3,22 @@
 /* LIBS */
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
-/* CONFIG */
+/* CONFIG AND PATH.H */
 #include "../config.h"
+#include "../mylibs/paths/paths.h"
 
 /* EXTERN */
 extern int edit(const char *, const char *, size_t); /* FROM e.c */
 extern int replace(const char *, size_t, size_t);    /* FROM r.c */
-extern int print(const char *);                      /* FROM p.c */
-extern int complete(const char *, int);              /* FROM c.c */
 
 /* MACROSES */
-#define DIRLEN   100
-#define BUFLEN   1024
-#define RESLEN   1024
-#define COMLEN	 1024
-#define NONPATH  "Nothing\t   "
+#define DIRLEN         100
+#define BUFLEN         1024
+#define RESLEN         1024
+#define COMLEN	       1024
+#define NONPATH_TRASH  " \tㅤ\tㅤㅤ"
 
 #ifndef TASKSLEN
 	#define TASKSLEN 100
@@ -40,21 +40,33 @@ extern int complete(const char *, int);              /* FROM c.c */
 	#define EDITOR "nano"
 #endif
 
+#ifndef NONPATH
+	#define NONPATH  "Nothing"
+#endif
 
-#define make(fn) fclose(fopen(fn, "w"))
+#define make(fn)      (fclose(fopen(fn, "w")))
+#define equal(s1, s2) (strcmp(s1, s2) == 0)
 
 /* DEFAULT FLAGS */
 /* PRINT ALL TASKS FROM CURRENT TASK LIST */
-#define p(fn)	{															   \
+#define p()	{ 															   \
 	FILE *r;                                     \
-	char *buf;      													   \
+	char *buf, *fn;  													   \
+	size_t id;                                   \
 																						   \
 	buf = malloc(BUFLEN);                        \
+	fn  = malloc(DIRLEN);                        \
+                                               \
+	get_current_list_dir(fn);                    \
 	if ((r = fopen(fn, "r"))) {                  \
 		if (!(fgets(buf, BUFLEN, r)))              \
 			puts(NOTASKS);													 \
-		else																			 \
-			{puts("Tasks:");print(fn);}							 \
+		else {                                     \
+			puts("Tasks:");                          \
+			printf("1: %s", buf); /* 1 line */       \
+			for (id = 2; fgets(buf, BUFLEN, r);)     \
+				printf("%zd: %s", id++, buf);          \
+		}							                             \
 		fclose(r);                                 \
 	} else puts("Choose the usable task list");  \
 	free(buf);                                   \
@@ -63,33 +75,85 @@ extern int complete(const char *, int);              /* FROM c.c */
 
 /* PRINT ALL TASKS FROM CHOOSED TASK LIST */
 #define s(fn) {                               \
+	FILE *r;                                    \
 	char *ldir, *buf;                           \
+	size_t id;                                  \
                                               \
 	ldir = malloc(DIRLEN);                      \
 	buf  = malloc(BUFLEN);                      \
 				                                      \
-	gethomepath(ldir);                          \
-	strcat(ldir, "/.tasks/");                   \
+	get_work_dir(ldir);                         \
 	strcat(ldir, fn);                           \
 																						  \
-	if ((fopen(ldir, "r"))) {                   \
-		if (!(fgets(buf,BUFLEN,fopen(ldir,"r"))))	\
+	if ((r = fopen(ldir, "r"))) {               \
+		if (!(fgets(buf,BUFLEN,r)))	              \
 			puts(NOTASKS);													\
-		else																			\
-			{puts("Tasks:");print(ldir);}						\
+		else {                                    \
+			puts("Tasks:");                         \
+			printf("1: %s", buf); /* 1 line */      \
+			for (id = 2; fgets(buf, BUFLEN, r);)    \
+				printf("%zd: %s", id++, buf);         \
+		}							                            \
+		fclose(r);                                \
 	} else puts("Invalid task list name");      \
                                               \
 	free(ldir); free(buf);                      \
 }
 
 
+/* ADD NEW TASK */
+#define n(newtask) {                          \
+	FILE *r, *a;                                \
+	char *listpath;                             \
+                                              \
+	listpath = malloc(DIRLEN);                  \
+	get_current_list_dir(listpath);             \
+                                              \
+	if ((r = fopen(listpath, "r"))) {           \
+		a = fopen(listpath, "a");                 \
+		fprintf(a, "%s\n", newtask);              \
+		fclose(r); fclose(a);                     \
+	}                                           \
+                                              \
+	free(listpath);                             \
+}
+
+
+/* COMPLETE TASK */
+#define c(id) {                  \
+	char *listdir;                 \
+                                 \
+	listdir = malloc(DIRLEN);      \
+	get_current_list_dir(listdir); \
+                                 \
+	edit(listdir, NULL, id);       \
+	free(listdir);                 \
+} 
+
+
+/* REPLACE 2 TASKS */
+#define r(l1, l2) {              \
+	char *listdir;                 \
+                                 \
+	listdir = malloc(DIRLEN);      \
+	get_current_list_dir(listdir); \
+                                 \
+	replace(listdir, l1, l2);      \
+}
+
+
 /* EDIT 1 LINE IN CURRENT TASK LIST */
-#define e(l, filename) {												  \
-	char *b;																			  \
-	if (fopen(filename, "r")) {                     \
+#define e(l) {										                \
+	FILE *r;                                        \
+	char *b, *fn;																		\
+                                                  \
+	fn = malloc(DIRLEN);                            \
+	get_current_list_dir(fn);                       \
+	                                                \
+	if ((r = fopen(fn, "r"))) {                     \
 		fgets((b = malloc(BUFLEN)), BUFLEN, stdin);  	\
-		edit(filename, b, l);													\
-		free(b);																			\
+		edit(fn, b, l);													      \
+		free(b); fclose(r); 													\
 	} else puts("Choose the usable task list");     \
 }
 
@@ -99,35 +163,33 @@ extern int complete(const char *, int);              /* FROM c.c */
 #define l() {                                   \
 	/* VARIABLES */                               \
 	DIR  *dir;                                    \
-	char *usabledir;                              \
+	char *listsdir;                               \
 	struct dirent *ent;                           \
                                                 \
 	/* GET DIR */                                 \
-	usabledir = malloc(DIRLEN);                   \
-	gethomepath(usabledir);                       \
-	strcat(usabledir, "/.tasks");                 \
+	listsdir = malloc(DIRLEN);                    \
+	get_work_dir(listsdir);                       \
                                                 \
 	/* OPEN THE DIR */                            \
-	if ((dir = opendir(usabledir)) != NULL) {     \
-		for (;(ent = readdir(dir));)                                 \
+	if ((dir = opendir(listsdir)) != NULL) {      \
+		for (;(ent = readdir(dir));)                \
 			if (strcmp(ent->d_name, ".usable") && *(ent->d_name) != '.')\
 				{puts(ent->d_name);}                    \
 	} else                                        \
 		{puts("We lost your tasks lists. Sorry");}  \
                                                 \
 	closedir(dir);                                \
-	free(usabledir);                              \
+	free(listsdir);                               \
 }
 
 
 /* MAKE A TASK LIST */
 #define b(list) {               \
 	char *listdir;                \
+	                              \
 	if (*list != '.') {           \
 		listdir = malloc(DIRLEN);   \
-		gethomepath(listdir);       \
-		strcat(listdir, "/.tasks/");\
-		strcat(listdir, list);      \
+		get_list_dir(listdir, list);\
 		                      			\
 		make(listdir);              \
 		free(listdir);              \
@@ -145,12 +207,10 @@ extern int complete(const char *, int);              /* FROM c.c */
 	listdir   = malloc(DIRLEN);           \
 	usabledir = malloc(DIRLEN);           \
                                         \
-	gethomepath(listdir);                 \
-	strcat(listdir, "/.tasks/");          \
-	strcat(listdir, list);                \
+	get_list_dir(listdir, list);          \
                                         \
-	gethomepath(usabledir);               \
-	strcat(usabledir, "/.tasks/.usable"); \
+	get_work_dir(usabledir);              \
+	strcat(usabledir, ".usable");         \
                                         \
 	if (access(listdir, F_OK) != -1) {    \
 		w = fopen(usabledir, "w");          \
@@ -166,132 +226,134 @@ extern int complete(const char *, int);              /* FROM c.c */
 
 /* KILL TASK LIST */
 #define k(list) {                                    \
-	FILE *read;                                        \
-	char *listdir, *usinglist, *usabledir;             \
+	char *listdir, *usinglist;                         \
                                                      \
 	listdir   = malloc(DIRLEN);                        \
-	usabledir = malloc(DIRLEN);                        \
-	usinglist = malloc(BUFLEN);                        \
+	usinglist = malloc(NAMELEN);                       \
                                                      \
-	gethomepath(usabledir);                            \
-	strcat(usabledir, "/.tasks/.usable");              \
-	read = fopen(usabledir, "r");                      \
-	fgets(usinglist, BUFLEN, read);                    \
+	get_current_list_name(usinglist, NAMELEN);         \
 	                                                   \
-	gethomepath(listdir);                              \
-	strcat(listdir, "/.tasks/");                       \
-	strcat(listdir, list);                             \
+	get_list_dir(listdir, list);                       \
                                                      \
-	if (strcmp(usinglist, list))/* FILE CAN NOT EXIST*/\
+	if (!equal(usinglist, list))                       \
 		remove(listdir);                                 \
-	else if (strcmp(usinglist, NONPATH) == 0)          \
-		puts("\"Nothing\" is not a task list");          \
 	else                                               \
 		puts("You can't. Change the tasks list");        \
                                                      \
-	fclose(read);                                      \
 	free(listdir);                                     \
 	free(usinglist);                                   \
-	free(usabledir);                                   \
 }
 
 
 /* ALIAS TASK LIST */
-#define a(tdir, oldn, newn) { \
-	char *oldpath, *newpath;    \
-                              \
-	oldpath = malloc(DIRLEN);   \
-	newpath = malloc(DIRLEN);   \
-                              \
-	gethomepath(oldpath);       \
-	strcat(oldpath, "/.tasks/");\
-	strcat(oldpath, oldn);      \
-                              \
-	gethomepath(newpath);       \
-	strcat(newpath, "/.tasks/");\
-	strcat(newpath, newn);      \
-                              \
-	if (strcmp(tdir, oldpath))  \
-		rename(oldpath, newpath); \
-	else                        \
-		puts("Change task list"); \
-	free(oldpath);              \
-	free(newpath);              \
+#define a(oldn, newn) {                     \
+	FILE *dot_usable_w;                       \
+	char *curdir, *usablefile;                \
+	char *oldpath, *newpath;                  \
+                                            \
+	curdir  = malloc(DIRLEN);                 \
+	oldpath = malloc(DIRLEN);                 \
+	newpath = malloc(DIRLEN);                 \
+                                            \
+	get_current_list_dir(curdir);             \
+	get_list_dir(oldpath, oldn);              \
+	get_list_dir(newpath, newn);              \
+                                            \
+	rename(oldpath, newpath);                 \
+	if (equal(curdir, oldpath)) {             \
+		usablefile = malloc(DIRLEN);            \
+                                            \
+		get_list_dir(usablefile, ".usable");    \
+		dot_usable_w = fopen(usablefile, "w");  \
+		fputs(newn, dot_usable_w);              \
+                                            \
+		free(usablefile); fclose(dot_usable_w); \
+	}                                         \
+                                            \
+	free(curdir);                             \
+	free(oldpath);                            \
+	free(newpath);                            \
 }
 
 
 /* CHECK USABLE TASK LIST */
 #define u()	{                             \
-	FILE *read;                             \
-	char *usable_path, *res;                \
+	char *res;                              \
                                           \
-	usable_path = malloc(DIRLEN);           \
-	gethomepath(usable_path);               \
-	strcat(usable_path, "/.tasks/.usable"); \
-	read        = fopen(usable_path, "r");  \
+	res = malloc(NAMELEN);			            \
+	get_current_list_name(res, NAMELEN);    \
                                           \
-	res = malloc(RESLEN);                   \
-	fgets(res, RESLEN, read);               \
 	puts(res);                              \
-                                          \
-	fclose(read);                           \
-	free(usable_path);                      \
 	free(res);                              \
 }
 
 
 /* QUIT FROM TASK LIST */
-#define q() {                           \
-	FILE *edit;                           \
-	char *usablefile;                     \
-                                        \
-	usablefile = malloc(DIRLEN);          \
-	gethomepath(usablefile);              \
-	strcat(usablefile, "/.tasks/.usable");\
-	                                      \
-	edit = fopen(usablefile, "w");        \
-	fputs(NONPATH, edit);                 \
-                                        \
-	fclose(edit);                         \
-	free(usablefile);                     \
+#define q() {                                    \
+	FILE *edit;                                    \
+	char *usablefile;                              \
+                                                 \
+	usablefile = malloc(DIRLEN);                   \
+	get_list_dir(usablefile, ".usable");           \
+	                                               \
+	edit = fopen(usablefile, "w");                 \
+	fprintf(edit, "%s%s", NONPATH, NONPATH_TRASH); \
+                                                 \
+	fclose(edit);                                  \
+	free(usablefile);                              \
 }
 
 
 /* HELP MENU */
-#define h()																							       \
-	puts("Normal:");                                             \
-	puts("-p: print all tasks");                     /* pmenu */ \
-	puts("-s: print all tasks from argument list");  /* smenu */ \
-	puts("-n: make new task");                       /* nmenu */ \
-	puts("-c: complite task as commit");             /* cmenu */ \
-	puts("-r: replace task 1 and task2");            /* rmenu */ \
-	puts("-e: edit task info by id");                /* emenu */ \
-	puts("-l: see all task lists");                  /* lmenu */ \
-	puts("-b: make a new task list");		  		       /* bmenu */ \
-  puts("-m: change task list ");                   /* mmenu */ \
-	puts("-k: remove the task list");                /* kmenu */ \
-	puts("-a: rename a task list");                  /* amenu */ \
-	puts("-u: print using task list name");          /* umenu */ \
-	puts("-q: quit from task list");                 /* qmenu */ \
-  puts("-h: help menu");                           /* hmenu */ \
-                                                               \
-	puts("\nSuper:");                                            \
-	puts("-P: print from a line to b line");         /* Pmenu */ \
-	puts("-S: print a-b lines from argument list");  /* Smenu */ \
-	puts("-N: make +n new tasks");                   /* Nmenu */ \
-	puts("-C: complite all tasks");                  /* Cmenu */ \
-	puts("-E: edit with editor");                    /* Emenu */ \
-	puts("-R: n-times use r");                       /* Rmenu */ \
-	puts("-M: like -m, can make non-existent list"); /* Mmenu */ \
-	puts("-K: like -k, can delete usable task list");/* Kmenu */
+#define h()	{\
+	puts("\
+CTM - useful CLI Task Manager\n\
+\n\
+Usage: ctm [flag] [flag arguments]  for flags who need arguments\n\
+   or: ctm [flag]                   for flags who doesn't need arguments\n\
+\n\
+Arguments can be normal and super. Super arguments is modificated normal argument. Usually this is a uppercased normal argument. For example, \"-C\" - super argument(modificated \"-c\"). In contrast to \"-c\", \"C\" complete all tasks in list\n\
+\n\
+Arguments:\n\
+\tNormal:\n\
+\t-p                                          print all tasks\n\
+\t-s <fn>                                     print all tasks from argument list\n\
+\t-n <new task text>                          make new task\n\
+\t-c <id>                                     complite task as commit\n\
+\t-r <id1> <id2>                              replace task 1 and task2\n\
+\t-e <id>                                     edit task info by id\n\
+\t-l                                          see all task lists\n\
+\t-b <list name>                              make a new task list\n\
+\t-m <list name>                              change task list\n\
+\t-k <list name>                              remove the task list\n\
+\t-a <list name 1> <list name 2>              rename a task list\n\
+\t-u                                          print using task list name\n\
+\t-q                                          quit from task list\n\
+\t-h                                          help menu\n\
+\n\
+\tSuper:\n\
+\t-P <start> <end(not necessary)>             print from a line to b line\n\
+\t-S <list name> <start> <end(not necessary)> print a-b lines from argument list\n\
+\t-N <number of task>                         make +n new tasks\n\
+\t-C                                          complite all tasks\n\
+\t-E <list name>                              edit with editor\n\
+\t-R <number of replacements>                 n-times use r\n\
+\t-M <list name>                              like -m, can make non-existent list\n\
+\t-K <list name>                              like -k, can delete usable task list\
+	");\
+}
 
 /* Super */
 /* PRINT SOME TASKS FROM CURRENT TASK LIST */
-#define P(fn, l1, l2) {																	                              \
+#define P(l1, l2) {																	                                  \
 	FILE *read;                                                                         \
+	char *fn;                                                                           \
 	char c[COMLEN];																				                              \
 	char b[BUFLEN];	  																		                              \
-																												                              \
+                                                                                      \
+	fn = malloc(DIRLEN);                                                                \
+	get_current_list_dir(fn);                                                           \
+                                                                                      \
 	if ((read = fopen(fn, "r"))) {                                                      \
 		if (!(fgets(b, BUFLEN, read))) /*NO TASKS*/																				\
 			puts(NOTASKS);																			                            \
@@ -317,10 +379,7 @@ extern int complete(const char *, int);              /* FROM c.c */
 	buf  = malloc(BUFLEN);                                                                \
 	com  = malloc(COMLEN);                                                                \
                                                                                         \
-	gethomepath(ldir);                                                                    \
-	strcat(ldir, "/.tasks/");                                                             \
-	strcat(ldir, fn);                                                                     \
-																												                                \
+	get_list_dir(ldir, fn);                                                               \
 	if ((read = fopen(ldir, "r"))) {                                                      \
 		if (!(fgets(buf, BUFLEN, read))) /*NO TASKS*/                                       \
 			puts(NOTASKS);																			                              \
@@ -340,59 +399,85 @@ extern int complete(const char *, int);              /* FROM c.c */
 
 
 /* MAKE N-TIMES TASKS IN CURRENT TASK LIST*/
-#define N(filename, len_mac) {			  \
-	FILE *tasks, *read;                 \
-	char b[BUFLEN];									    \
-	size_t len;												  \
-																		  \
-	if ((read = fopen(filename, "r"))) {\
-		tasks = fopen(filename, "a");     \
-		for (len = len_mac; len--;) {			\
-			fgets(b, TASKLEN, stdin);				\
-			fputs(b, tasks);								\
-		}																	\
-		fclose(tasks); fclose(read);      \
-	} else                              \
-		puts("Choose a task list");       \
+#define N(len_mac) {          			     \
+	FILE *tasks, *read;                    \
+	char b[BUFLEN];									       \
+	char *filename;                        \
+	size_t len;												     \
+																		     \
+	filename = malloc(DIRLEN);             \
+	get_current_list_dir(filename);        \
+                                         \
+	if (len_mac > 0) {                     \
+		if ((read = fopen(filename, "r"))) { \
+			tasks = fopen(filename, "a");      \
+			for (len=(size_t)len_mac;len--;) { \
+				fgets(b, TASKLEN, stdin);				 \
+				fputs(b, tasks);								 \
+			}																	 \
+			fclose(tasks); fclose(read);       \
+		} else                               \
+			puts("Choose a task list");        \
+	}                                      \
 }
 
 
 /* COMPLETE ALL TASKS FROM CURRENT TASK LIST */
-#define C(filename) {						        \
-	FILE *read;                           \
+#define C() {	        					        \
+	FILE *r;                              \
+	char *fn;                             \
+                                        \
+	fn = malloc(DIRLEN);                  \
+	get_current_list_dir(fn);             \
 				                                \
-	if ((read = fopen(filename, "r"))) {  \
-		remove(filename);		      					\
-		make(filename);                   	\
-		fclose(read);                       \
+	if ((r = fopen(fn, "r"))) {           \
+		remove(fn);		      					      \
+		make(fn);                   	      \
+		fclose(r);                          \
 	} else                                \
 		puts("Choose an usable task list"); \
+	                                      \
+	free(fn);                             \
 }
 
 
 /* EDIT TASK LIST WITH EDITOR(DEFAULT IS NANO) */
-#define E(listdir) {                         \
+#define E(list) {                            \
 	FILE *r;                                   \
-	char *com;                                 \
+	char *listdir, *com;                       \
                                              \
-	com = malloc(COMLEN);                      \
+	com     = malloc(COMLEN);                  \
+	listdir = malloc(DIRLEN);                  \
+                                             \
+	if (list) /* CHOOSED -> USE SOME LIST */   \
+		get_list_dir(listdir, list);             \
+	else /* DIDN'T CHOOSED -> CURRENT */       \
+		get_current_list_dir(listdir);           \
+	                                           \
 	if ((r = fopen(listdir, "r"))) {           \
 		sprintf(com,"%s \"%s\"",EDITOR,listdir); \
 		system(com);                             \
 		fclose(r);                               \
 	} else puts("Choose a task list");         \
                                              \
-	free(com);                                 \
+	free(com); free(listdir);                  \
 }
 
 
 /* REPLACE SOME TASKS N-TIMES FROM CURRENT TASK LIST */
-#define R(fn, times) {									\
+#define R(times) {    									\
 	size_t l1, l2, i;											\
+	char *fn;                             \
+                                        \
+	fn = malloc(DIRLEN);                  \
+	get_current_list_dir(fn);             \
+                                        \
 	for (i = 1; i <= times; i++) {				\
 		scanf("%zu %zu", &l1, &l2);					\
 		replace(fn, l1, l2);								\
 	}																			\
+                                        \
+	free(fn);                             \
 }																				\
 
 
@@ -404,12 +489,8 @@ extern int complete(const char *, int);              /* FROM c.c */
 	listdir   = malloc(DIRLEN);           \
 	usabledir = malloc(DIRLEN);           \
                                         \
-	gethomepath(listdir);                 \
-	strcat(listdir, "/.tasks/");          \
-	strcat(listdir, list);                \
-                                        \
-	gethomepath(usabledir);               \
-	strcat(usabledir, "/.tasks/.usable"); \
+	get_list_dir(listdir, list);          \
+	get_list_dir(usabledir, ".usable");   \
                                         \
 	if (access(listdir, F_OK) == -1)      \
 		{make(listdir);}                    \
@@ -423,34 +504,31 @@ extern int complete(const char *, int);              /* FROM c.c */
 
 
 /* KILL TASK LIST WITHOUT A RESTRICTIONS */
-#define K(usepath, tokill) {                         \
-	FILE *usablef, *read;                              \
+#define K(tokill) {                                  \
+	FILE *usablef;                                     \
 	char *listdir, *usinglist, *usabledir;             \
+	char *usepath;                                     \
                                                      \
 	listdir   = malloc(DIRLEN);                        \
 	usabledir = malloc(DIRLEN);                        \
-	usinglist = malloc(BUFLEN);                        \
+	usinglist = malloc(NAMELEN);                       \
+	usepath   = malloc(DIRLEN);                        \
                                                      \
-	gethomepath(usabledir);                            \
-	strcat(usabledir, "/.tasks/.usable");              \
-	read = fopen(usabledir, "r");                      \
-	fgets(usinglist, BUFLEN, read);                    \
-	                                                   \
-	gethomepath(listdir);                              \
-	strcat(listdir, "/.tasks/");                       \
-	strcat(listdir, tokill);                           \
+	get_list_dir(usabledir, ".usable");                \
+	get_current_list_name(usinglist, NAMELEN);         \
+	get_list_dir(listdir, tokill);                     \
+	get_current_list_dir(usepath);                     \
                                                      \
-	if (strcmp(tokill, NONPATH) == 0)                  \
-		puts("\"Nothing\" is not a task list");          \
-	else if (strcmp(usinglist,tokill) == 0) {          \
+	if (equal(usinglist,tokill)) {                     \
 		puts("Complete! Change your task list");         \
-		fputs(NONPATH, (usablef = fopen(usabledir,"w")));\
+		usablef = fopen(usabledir, "w");                 \
+		fprintf(usablef, "%s%s",NONPATH,NONPATH_TRASH);  \
 		fclose(usablef);                                 \
 	}                                                  \
 	remove(listdir);                                   \
 	                                                   \
-	fclose(read);                                      \
 	free(listdir);                                     \
 	free(usinglist);                                   \
 	free(usabledir);                                   \
+	free(usepath);                                     \
 }
