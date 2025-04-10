@@ -1,6 +1,7 @@
 compile:
 	gcc src/operators/*.c -c -std=c17
 	gcc mylibs/paths/*.c -c -std=c17
+	gcc mylibs/descriptor/*.c -c -std=c17
 	gcc src/main.c -c -std=c17 
 	rm objs/*
 	mv *.o objs
@@ -9,6 +10,7 @@ compile:
 debug:
 	gcc src/operators/*.c -c -Werror -Wall -Wextra -std=c17
 	gcc mylibs/paths/*.c -Werror -Wall -Wextra -c -std=c17
+	gcc mylibs/descriptor/*.c -Werror -Wall -Wextra -c -std=c17
 	gcc src/main.c -Werror -Wall -Wextra -c -std=c17 
 	rm objs/*
 	mv *.o objs
@@ -17,6 +19,7 @@ debug:
 codestyle:
 	gcc src/operators/*.c -c -pedantic -Wshadow -Wconversion -Wformat=2 -std=c17
 	gcc mylibs/paths/*.c -pedantic -Wshadow -Wconversion -Wformat=2 -c -std=c17
+	gcc mylibs/descriptor/*.c -pedantic -Wshadow -Wconversion -Wformat=2 -c -std=c17
 	gcc src/main.c -pedantic -Wshadow -Wconversion -Wformat=2 -c -std=c17 
 	rm objs/*
 	mv *.o objs
@@ -25,6 +28,7 @@ codestyle:
 release:
 	gcc src/operators/*.c -O3 -c -std=c17
 	gcc mylibs/paths/*.c -O3 -c -std=c17
+	gcc mylibs/descriptor/*.c -O3 -c -std=c17
 	gcc src/main.c -O3 -c -std=c17 
 	rm objs/*
 	mv *.o objs

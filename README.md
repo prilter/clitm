@@ -2,27 +2,25 @@
 It's useful CLI task manager, but only a little bit :)  
   
 # Refactoring report
-1) removed old path.h functions, have added more understandable functions: current_list_dir, current_list_name, list_dir, work_dir  
-2) added equal macros function  
-3) moved from main.c almost all libs to operators.h(it's more readable)  
-4) removed c.c file and complete function, replaced by edit command  
-5) removed p.c file and print function, replaced by cycles  
+1) Made more easy to read p() and s() flags by is_empty() and cat() functions  
+2) Made more easy to read l() flag by ls() function  
+3) Made more easy to read m() and M() flags by is_exist function  
   
 # New updates
-1) fixed infinity stdin after use negative argument for -N  
-2) added editing another lists for -E(temporaly need "-" argument to edit current list)  
-3) Fixed bug that may interfere with using flags in a single command  
-4) You can change name of usable task list  
-5) Added NONPATH parametr to control stdout result if ".usable" file is empty  
-6) changed help menu  
+1) Fixed -c bug with segmentation fault  
+2) Added "descriptor.h" lib(ls.c, is_empty.c, cat.c, is_exist.c, filelen.c)  
+3) Fixed bug with -R when argument more lines of file length  
+4) Added -d and -D flags(check " ctm -h | grep "d   " && ctm -h | grep "D <" ")  
+5) Added 2 parameters to config.h(EXIST and CHOOSELIST)  
   
 # Plans
 1) The refactoring  
-2) Fix bugs that may interfere with using flags in a single command  
+2) Add more parameters to config.h  
+3) Bug fix  
   
 # Installation guide
 ```bash
-git clone https:github.com/prilter/tasks
+git clone https:github.com/prilter/ctm
 cd tasks
 make install
 ```  
@@ -30,12 +28,12 @@ make install
 # Configure
 1) Clone repository and move to project:  
 ```bash
-git clone https:github.com/prilter/tasks
+git clone https:github.com/prilter/ctm
 cd tasks
 ```  
 2) Open config.h and configure it  
 3) Setting programm  
-4) Compile:  
+4) Recompile:  
 ```bash
 make install
 ```

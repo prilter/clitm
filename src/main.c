@@ -5,7 +5,7 @@
 #include "operators.h" 
 
 /* LOCAL MACROSES */
-#define FLAGS		 "P:pS:s:N:n:Cc:R:r:E:e:lb:M:m:K:k:a:uqh"
+#define FLAGS		 "P:pS:s:N:n:Cc:R:r:E:e:D:dlb:M:m:K:k:a:uqh"
 #define ENDARGV  -1
 
 /* MAIN FUNCTION */
@@ -59,6 +59,13 @@ int main(int argc, char **argv)
 				e((size_t)atoi(optarg));
 				break;
 			
+			case 'D':
+				D(optarg);
+				break;
+			case 'd':
+				d();
+				break;
+
 			case 'R':
 				R((size_t)atoi(optarg));
 				break;
