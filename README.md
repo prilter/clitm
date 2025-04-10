@@ -20,20 +20,20 @@ It's useful CLI task manager, but only a little bit :)
   
 # Installation guide
 ```bash
-git clone https:github.com/prilter/ctm
-cd tasks
+git clone https://github.com/prilter/ctm
+cd ctm
 make install
 ```  
   
 # Configure
 1) Clone repository and move to project:  
 ```bash
-git clone https:github.com/prilter/ctm
-cd tasks
+git clone https://github.com/prilter/ctm
+cd ctm
 ```  
 2) Open config.h and configure it  
 3) Setting programm  
 4) Recompile:  
 ```bash
-make install
+make release
 ```
