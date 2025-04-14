@@ -5,13 +5,16 @@
 #include "operators.h" 
 
 /* LOCAL MACROSES */
-#define FLAGS		 "P:pS:s:N:n:Cc:R:r:E:e:D:dlb:M:m:K:k:a:uqh"
+#define FLAGS		 "P:pS:s:N:nCc:R:r:E:e:D:dlb:M:m:K:k:a:uqh"
 #define ENDARGV  -1
 
 /* MAIN FUNCTION */
 int main(int argc, char **argv)
 {
 	int mode;
+	
+	if (argc == 1) puts("Use flags(check -h)");
+
 	for (;(mode = getopt(argc, argv, FLAGS))!=ENDARGV;) {
 		switch (mode) {
 			case 'P':
@@ -39,7 +42,7 @@ int main(int argc, char **argv)
 				N(atoi(optarg));
 				break;
 			case 'n':
-				n(optarg);
+				n();
 				break;
 			
 			case 'C':

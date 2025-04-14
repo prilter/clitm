@@ -54,6 +54,10 @@ extern int replace(const char *, size_t, size_t);    /* FROM r.c */
 	#define CHOOSELIST "Choose task list"
 #endif
 
+#ifndef TASKS
+	#define TASKS "Tasks:"
+#endif
+
 #define make(fn)      (fclose(fopen(fn, "w")))
 #define equal(s1, s2) (strcmp(s1, s2) == 0)
 
@@ -72,7 +76,7 @@ extern int replace(const char *, size_t, size_t);    /* FROM r.c */
 		if (is_empty(fn))                          \
 			puts(NOTASKS);													 \
 		else {                                     \
-			puts("Tasks:");                          \
+			puts(TASKS);                             \
 			cat(fn);                                 \
 		}							                             \
 	} else puts(CHOOSELIST);                     \
@@ -96,7 +100,7 @@ extern int replace(const char *, size_t, size_t);    /* FROM r.c */
 		if (is_empty(ldir))       	              \
 			puts(NOTASKS);													\
 		else {                                    \
-			puts("Tasks:");                         \
+			puts(TASKS);                            \
 			cat(ldir);															\
 		}							                            \
 	} else puts("Invalid task list name");      \
@@ -106,32 +110,40 @@ extern int replace(const char *, size_t, size_t);    /* FROM r.c */
 
 
 /* ADD NEW TASK */
-#define n(newtask) {                          \
+#define n() {                                 \
 	FILE *r, *a;                                \
-	char *listpath;                             \
+	char *listpath, *newtask;                   \
                                               \
 	listpath = malloc(DIRLEN);                  \
 	get_current_list_dir(listpath);             \
                                               \
+	newtask = malloc(BUFLEN);                   \
+	fgets(newtask, BUFLEN, stdin);              \
+                                              \
 	if ((r = fopen(listpath, "r"))) {           \
 		a = fopen(listpath, "a");                 \
-		fprintf(a, "%s\n", newtask);              \
+		fputs(newtask, a);                        \
 		fclose(r); fclose(a);                     \
 	}                                           \
                                               \
 	free(listpath);                             \
+	free(newtask);                              \
 }
 
 
 /* COMPLETE TASK */
-#define c(id) {                  \
-	char *listdir;                 \
-                                 \
-	listdir = malloc(DIRLEN);      \
-	get_current_list_dir(listdir); \
-                                 \
-	edit(listdir, "\0", id);       \
-	free(listdir);                 \
+#define c(id) {                    \
+	FILE *r;                         \
+	char *listdir;                   \
+                                   \
+	listdir = malloc(DIRLEN);        \
+	get_current_list_dir(listdir);   \
+                                   \
+	if ((r = fopen(listdir, "r"))) { \
+		edit(listdir, "\0", id);       \
+		fclose(r);                     \
+	} else puts(CHOOSELIST);         \
+	free(listdir);                   \
 } 
 
 
@@ -170,8 +182,7 @@ extern int replace(const char *, size_t, size_t);    /* FROM r.c */
 	get_current_list_dir(fn);         \
                                     \
 	if (is_exist(fn))                 \
-		printf("List quantity: %zd\n",  \
-						filelen(fn));           \
+		printf("%zd\n", filelen(fn));   \
 	else                              \
 		puts(CHOOSELIST);               \
 	free(fn);                         \
@@ -315,7 +326,7 @@ extern int replace(const char *, size_t, size_t);    /* FROM r.c */
 /* HELP MENU */
 #define h()	{\
 	puts("\
-CTM - useful CLI Task Manager\n\
+CLITM - useful CLI Task Manager\n\
 \n\
 Usage: ctm [flag] [flag arguments]  for flags who need arguments\n\
    or: ctm [flag]                   for flags who doesn't need arguments\n\

@@ -12,3 +12,4 @@
 #define NONPATH    "Nothing"             /* TEXT YOU WOULD SEE IF YOU DID NOT CHOOSE TASK LIST(REFRESH BY "ctm -q") */
 #define EXIST      "List does not exist" /* TEXT YOU WOULD SEE IF LIST NAME IS INVALID(TASK LIST DOES NOT EXIST) */
 #define CHOOSELIST "Choose task list"    /* TEXT YOU WOULD SEE IF YOU DID NOT CHOOSE TASK LIST  */
+#define TASKS      "Tasks:"              /* STDOUT OF TASK LIST */

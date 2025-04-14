@@ -21,13 +21,18 @@ int
 replace(const char *filename, size_t l1, size_t l2) 
 {
 	FILE *r;
-	char b1[BUFLEN], b2[BUFLEN];
+	char *b1;
+	char *b2;
 
 	if (l1 == l2)
 		return 1;
 
 	if (!fopen(filename, "r"))
 		{puts("Choose the usable task list"); return 0;}
+
+	/* MALLOC */
+	b1 = malloc(BUFLEN);
+	b2 = malloc(BUFLEN);
 
 	/* GETTING b1 AND b2 */
 	getb(l1, r, b1);
@@ -37,5 +42,7 @@ replace(const char *filename, size_t l1, size_t l2)
 	edit(filename, b2, l1);
 	edit(filename, b1, l2);
 
+	free(b1);
+	free(b2);
 	return 1;
 }
