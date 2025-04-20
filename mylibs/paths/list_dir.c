@@ -4,6 +4,7 @@
 
 extern char *_get_work_dir(char *);
 
+__attribute__((hot))
 char *_get_list_dir(char *buf_dir, const char *list) 
 {
 	buf_dir = _get_work_dir(buf_dir);

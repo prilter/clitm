@@ -13,13 +13,14 @@
 /* EXTERN */
 extern int edit(const char *, const char *, size_t); /* FROM e.c */
 extern int replace(const char *, size_t, size_t);    /* FROM r.c */
+extern int clear(const char *, char *);
 
 /* MACROSES */
 #define DIRLEN         100
 #define BUFLEN         1024
 #define RESLEN         1024
 #define COMLEN	       1024
-#define NONPATH_TRASH  " \tㅤ\tㅤㅤ"
+#define TRASH          " \tㅤ\tㅤㅤ"
 #define USABLENAME     ".usable"
 
 #ifndef TASKSLEN
@@ -132,18 +133,23 @@ extern int replace(const char *, size_t, size_t);    /* FROM r.c */
 
 
 /* COMPLETE TASK */
-#define c(id) {                    \
-	FILE *r;                         \
-	char *listdir;                   \
-                                   \
-	listdir = malloc(DIRLEN);        \
-	get_current_list_dir(listdir);   \
-                                   \
-	if ((r = fopen(listdir, "r"))) { \
-		edit(listdir, "\0", id);       \
-		fclose(r);                     \
-	} else puts(CHOOSELIST);         \
-	free(listdir);                   \
+#define TRASH_N " \tㅤ\tㅤㅤ\n"
+#define c(argv, st) {                                   \
+	FILE *r;                                              \
+	char *curlist;                                        \
+	size_t id;                                            \
+                                                        \
+	curlist = malloc(DIRLEN);                             \
+	get_current_list_dir(curlist);                        \
+                                                        \
+	if ((r = fopen(curlist, "r"))) {                      \
+		fclose(r);                                          \
+		for (id=st; argv[id] && *argv[id] != '-'; id++)     \
+			edit(curlist, TRASH_N , (size_t)atoi(argv[id]));  \
+		clear(curlist, TRASH_N);                            \
+	} else puts(CHOOSELIST);                              \
+                                                        \
+	free(curlist);                                        \
 } 
 
 
@@ -159,7 +165,7 @@ extern int replace(const char *, size_t, size_t);    /* FROM r.c */
 
 
 /* EDIT 1 LINE IN CURRENT TASK LIST */
-#define e(l) {										                \
+#define e(l) {     						                    \
 	FILE *r;                                        \
 	char *b, *fn;																		\
                                                   \
@@ -316,7 +322,7 @@ extern int replace(const char *, size_t, size_t);    /* FROM r.c */
 	get_list_dir(usablefile, USABLENAME);          \
 	                                               \
 	edit = fopen(usablefile, "w");                 \
-	fprintf(edit, "%s%s", NONPATH, NONPATH_TRASH); \
+	fprintf(edit, "%s%s", NONPATH, TRASH);         \
                                                  \
 	fclose(edit);                                  \
 	free(usablefile);                              \
@@ -338,7 +344,7 @@ Arguments:\n\
 \t-p                                          print all tasks\n\
 \t-s <fn>                                     print all tasks from argument list\n\
 \t-n <new task text>                          make new task\n\
-\t-c <id>                                     complite task as commit\n\
+\t-c <ids>                                    complete task as commit\n\
 \t-r <id1> <id2>                              replace task 1 and task2\n\
 \t-e <id>                                     edit task info by id\n\
 \t-d                                          get dimension of usable list\n\
@@ -360,62 +366,79 @@ Arguments:\n\
 \t-D <list name>                              get dimension of list from the argument\n\
 \t-R <number of replacements>                 n-times use r\n\
 \t-M <list name>                              like -m, can make non-existent list\n\
-\t-K <list name>                              like -k, can delete usable task list\
+\t-K <list name>                              like -k, can delete usable task list\n\
+\n\
+\tOptional arguments:\n\
+\t-b                                          nothing\n\
+\t-P                                          equal -p\n\
+\t-N                                          equal -n\n\
+\t-E                                          open used list to edit\n\
+\t-D                                          equal -d\n\
+\t-R                                          nothing\n\
 	");\
 }
 
 /* Super */
 /* PRINT SOME TASKS FROM CURRENT TASK LIST */
-#define P(l1, l2) {																	                                  \
-	FILE *read;                                                                         \
-	char *fn;                                                                           \
-	char c[COMLEN];																				                              \
-	char b[BUFLEN];	  																		                              \
-                                                                                      \
-	fn = malloc(DIRLEN);                                                                \
-	get_current_list_dir(fn);                                                           \
-                                                                                      \
-	if ((read = fopen(fn, "r"))) {                                                      \
-		if (!(fgets(b, BUFLEN, read))) /*NO TASKS*/																				\
-			puts(NOTASKS);																			                            \
-		else {																								                            \
-			if (l1 <= l2)																				                            \
-				sprintf(c, "nl -w 1 -s ': ' -n ln \"%s\" | sed -n '%zd,%zdp'", fn, l1, l2);		\
-			else																								                            \
-				sprintf(c,"nl -w 1 -s ': ' -n ln \"%s\" | sed -n '%zd,%zdp' | tac",fn,l2,l1);	\
-																			                            									  \
-			system(c);																					                            \
-		}																											                            \
-		fclose(read);                                                                     \
-	} else puts(CHOOSELIST);                                                            \
+#define _PS_COM      "sed -n '%zd,%zdp' %s | awk '{print NR+%zd \": \" $0}'"
+#define _PS_COM_TAC  "sed -n '%zd,%zdp' %s | awk '{print NR+%zd \": \" $0}' | tac"
+#define P(l1, l2) {																	\
+	FILE *read;                                       \
+	char *fn;                                         \
+	char *b, *c;	  																	\
+                                                    \
+	b = malloc(BUFLEN);                               \
+	c = malloc(COMLEN);                               \
+                                                    \
+	fn = malloc(DIRLEN);                              \
+	get_current_list_dir(fn);                         \
+                                                    \
+	if ((read = fopen(fn, "r"))) {                    \
+		if (!(fgets(b, BUFLEN, read))) /*NO TASKS*/			\
+			puts(NOTASKS);																\
+		else {																					\
+			if (l1 <= l2)																	\
+			  sprintf(c, _PS_COM, l1, l2, fn, l1-1);      \
+			else                    										  \
+			  sprintf(c, _PS_COM_TAC, l2, l1, fn, l2-1);  \
+			system(c);                                    \
+		}																								\
+		fclose(read);                                   \
+	} else puts(CHOOSELIST);                          \
+                                                    \
+	free(fn);                                         \
+	free(b);                                          \
+	free(c);                                          \
 }
 
 
 /* PRINT SOME TASKS FROM CHOOSED TASK LIST */
-#define S(fn, l1, l2) {                                                                   \
-	FILE *read;                                                                             \
-	char *ldir, *com, *buf;                                                                 \
-                                                                                          \
-	ldir = malloc(DIRLEN);                                                                  \
-	buf  = malloc(BUFLEN);                                                                  \
-	com  = malloc(COMLEN);                                                                  \
-                                                                                          \
-	get_list_dir(ldir, fn);                                                                 \
-	if ((read = fopen(ldir, "r"))) {                                                        \
-		if (!(fgets(buf, BUFLEN, read))) /*NO TASKS*/                                         \
-			puts(NOTASKS);																			                                \
-		else {																								                                \
-			if (l1 <= l2)																				                                \
-				sprintf(com, "nl -w 1 -s ': ' -n ln \"%s\" | sed -n '%zd,%zdp'", ldir, l1, l2);	  \
-			else																								                                \
-				sprintf(com,"nl -w 1 -s ': ' -n ln \"%s\" | sed -n '%zd,%zdp' | tac",ldir,l2,l1); \
-																												                                  \
-			system(com);  																			                                \
-		}																											                                \
-		fclose(read);                                                                         \
-	} else puts(CHOOSELIST);                                                                \
-                                                                                          \
-	free(ldir); free(buf); free(com);                                                       \
+#define S(fn, l1, l2) {                                 \
+	FILE *read;                                           \
+	char *ldir, *com, *buf;                               \
+                                                        \
+	ldir = malloc(DIRLEN);                                \
+	buf  = malloc(BUFLEN);                                \
+	com  = malloc(COMLEN);                                \
+                                                        \
+	get_list_dir(ldir, fn);                               \
+	if ((read = fopen(ldir, "r"))) {                      \
+		if (!(fgets(buf, BUFLEN, read))) /*NO TASKS*/       \
+			puts(NOTASKS);																		\
+		else {																							\
+			if (l1 <= l2)																		  \
+			  sprintf(com, _PS_COM, l1, l2, ldir, l1-1);      \
+			else																						  \
+			  sprintf(com, _PS_COM_TAC, l2, l1, ldir, l2-1);  \
+																												\
+			system(com);  																		\
+		}																										\
+		fclose(read);                                       \
+	} else puts(CHOOSELIST);                              \
+                                                        \
+	free(ldir);                                           \
+	free(buf);                                            \
+	free(com);                                            \
 }
 
 
@@ -470,16 +493,19 @@ Arguments:\n\
 	com     = malloc(COMLEN);                  \
 	listdir = malloc(DIRLEN);                  \
                                              \
-	if (list) /* CHOOSED -> USE SOME LIST */   \
+	if (list) { /* CHOOSED -> USE SOME LIST */ \
 		get_list_dir(listdir, list);             \
-	else /* DIDN'T CHOOSED -> CURRENT */       \
+		if (!is_exist(listdir)) puts(EXIST);     \
+	} else { /* DIDN'T CHOOSED -> CURRENT */   \
 		get_current_list_dir(listdir);           \
+		if (!is_exist(listdir)) puts(CHOOSELIST);\
+	}                                          \
 	                                           \
 	if ((r = fopen(listdir, "r"))) {           \
 		sprintf(com,"%s \"%s\"",EDITOR,listdir); \
 		system(com);                             \
 		fclose(r);                               \
-	} else puts(CHOOSELIST);                   \
+	}                                          \
                                              \
 	free(com); free(listdir);                  \
 }
@@ -493,9 +519,7 @@ Arguments:\n\
 	get_list_dir(fn, list);             \
 	                                    \
 	if (is_exist(fn))                   \
-		printf("\"%s\" quantity: %zd\n",  \
-						list,                     \
-						filelen(fn));             \
+		printf("%zd\n", filelen(fn));     \
 	else                                \
 		puts(EXIST);                      \
                                       \
@@ -563,7 +587,7 @@ Arguments:\n\
 	if (equal(usinglist,tokill)) {                     \
 		printf("Complete! %s\n", CHOOSELIST);			       \
 		usablef = fopen(usabledir, "w");                 \
-		fprintf(usablef, "%s%s",NONPATH,NONPATH_TRASH);  \
+		fprintf(usablef, "%s%s", NONPATH, TRASH);        \
 		fclose(usablef);                                 \
 	}                                                  \
 	remove(listdir);                                   \

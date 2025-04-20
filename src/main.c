@@ -5,7 +5,7 @@
 #include "operators.h" 
 
 /* LOCAL MACROSES */
-#define FLAGS		 "P:pS:s:N:nCc:R:r:E:e:D:dlb:M:m:K:k:a:uqh"
+#define FLAGS		 ":P:pS:s:N:nCc:R:r:E:e:D:dlb:M:m:K:k:a:uqh"
 #define ENDARGV  -1
 
 /* MAIN FUNCTION */
@@ -17,6 +17,17 @@ int main(int argc, char **argv)
 
 	for (;(mode = getopt(argc, argv, FLAGS))!=ENDARGV;) {
 		switch (mode) {
+			case ':': /* OPTIONAL ARGUMENTS */
+				switch (optopt) {
+					case 'E': E(NULL); break;
+					case 'P':	p();     break;
+					case 'N':	n();     break;
+					case 'D':	d();     break;
+					case 'R':	break;
+					case 'b':	break;
+				}
+				break;
+
 			case 'P':
 				if (argv[optind])
 					{P((size_t)atoi(optarg), (size_t)atoi(argv[optind]));}
@@ -31,10 +42,12 @@ int main(int argc, char **argv)
 				s(optarg);
 				break;
 			case 'S':
-				if (argv[optind+1])
+				if (optind == argc || *argv[optind] == '-') /* ONLY FIRST ARGUMENT */
+					{s(optarg);break;}
+				if (!argv[optind+1] || *argv[optind+1] == '-') /* 2 ARGUMENTS */
+					{S(optarg, (size_t)atoi(argv[optind]), (size_t)TASKSLEN);}
+				else /* 3 ARGUMENTS */ 
 					{S(optarg, (size_t)atoi(argv[optind]), (size_t)atoi(argv[optind+1]));}
-				else 
-				  {S(optarg, (size_t)atoi(argv[optind]), (size_t)TASKSLEN);}
 				break;
 
 
@@ -49,14 +62,11 @@ int main(int argc, char **argv)
 				C();
 				break;
 			case 'c':
-				c(atoi(optarg));
+				c(argv, (size_t)(optind-1));
 				break;
 			
 			case 'E':
-				if (*optarg == '-')
-					{E(NULL);}
-				else
-					{E(optarg);}
+				E(optarg);
 				break;
 			case 'e':
 				e((size_t)atoi(optarg));

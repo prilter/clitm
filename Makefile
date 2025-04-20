@@ -1,32 +1,35 @@
 compile:
-	gcc src/operators/*.c -c -std=c17
+	gcc src/editfile/*.c -c -std=c17
 	gcc mylibs/paths/*.c -c -std=c17
 	gcc mylibs/descriptor/*.c -c -std=c17
 	gcc src/main.c -c -std=c17 
 	rm objs/*
 	mv *.o objs
 	gcc objs/*.o -o clitm -std=c17
+	rm clitm
 
 debug:
-	gcc src/operators/*.c -c -Werror -Wall -Wextra -std=c17
+	gcc src/editfile/*.c -c -Werror -Wall -Wextra -std=c17
 	gcc mylibs/paths/*.c -Werror -Wall -Wextra -c -std=c17
 	gcc mylibs/descriptor/*.c -Werror -Wall -Wextra -c -std=c17
 	gcc src/main.c -Werror -Wall -Wextra -c -std=c17 
 	rm objs/*
 	mv *.o objs
 	gcc objs/*.o -Werror -Wall -Werror -o clitm -std=c17
+	rm clitm
 
 codestyle:
-	gcc src/operators/*.c -c -pedantic -Wshadow -Wconversion -Wformat=2 -std=c17
+	gcc src/editfile/*.c -c -pedantic -Wshadow -Wconversion -Wformat=2 -std=c17
 	gcc mylibs/paths/*.c -pedantic -Wshadow -Wconversion -Wformat=2 -c -std=c17
 	gcc mylibs/descriptor/*.c -pedantic -Wshadow -Wconversion -Wformat=2 -c -std=c17
 	gcc src/main.c -pedantic -Wshadow -Wconversion -Wformat=2 -c -std=c17 
 	rm objs/*
 	mv *.o objs
 	gcc objs/*.o -pedantic -Wshadow -Wconversion -Wformat=2 -o clitm -std=c17
+	rm clitm
 
 release:
-	gcc src/operators/*.c -O3 -c -std=c17
+	gcc src/editfile/*.c -O3 -c -std=c17
 	gcc mylibs/paths/*.c -O3 -c -std=c17
 	gcc mylibs/descriptor/*.c -O3 -c -std=c17
 	gcc src/main.c -O3 -c -std=c17 
@@ -37,5 +40,5 @@ release:
 install:
 	mkdir -p ~/.tasks
 	echo "Nothing" > ~/.tasks/.usable
-	# chmod 700 ~/.tasks # For safity. You may don't use it
 	make release
+	sudo chmod 111 /usr/bin/clitm

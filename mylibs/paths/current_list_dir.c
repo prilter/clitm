@@ -11,6 +11,7 @@ extern char *_get_current_list_name(char *, unsigned int);
 	#define NAMELEN 1024
 #endif
 
+__attribute__((hot))
 char *_get_current_list_dir(char *dir) 
 {
 	char *taskspath, *usable;

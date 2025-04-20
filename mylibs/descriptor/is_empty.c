@@ -20,7 +20,7 @@ int is_empty(const char *fn)
 	fd = open(fn, O_RDONLY);
 	if (!fstat(fd, &st))
 		if (st.st_size == 0)
-			return 1;
+			{close(fd); return 1;}
 	close(fd);
 
 	/* IF NOT EMPTY */

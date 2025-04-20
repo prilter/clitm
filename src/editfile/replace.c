@@ -17,6 +17,7 @@ extern int edit(const char *fm, const char *new, size_t line);
 	fclose(r);																						\
 }
 
+__attribute__((cold))
 int 
 replace(const char *filename, size_t l1, size_t l2) 
 {
